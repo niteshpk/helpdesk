@@ -1,14 +1,29 @@
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { signIn, useSession } from "../lib/auth-client";
+
+const loginSchema = z.object({
+  email: z.email("Please enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const { data: session, isPending } = useSession();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
 
   if (isPending) {
     return <div className="loading">Loading...</div>;
@@ -18,16 +33,13 @@ export default function LoginPage() {
     return <Navigate to="/" replace />;
   }
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError("");
 
-    const { error } = await signIn.email({ email, password });
+    const { error } = await signIn.email(data);
 
     if (error) {
-      setError(error.message ?? "Login failed");
-      setLoading(false);
+      setServerError(error.message ?? "Login failed");
       return;
     }
 
@@ -39,28 +51,36 @@ export default function LoginPage() {
       <div className="login-card">
         <h1>Helpdesk</h1>
         <p className="login-subtitle">Sign in to your account</p>
-        <form onSubmit={handleSubmit}>
-          {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {serverError && <div className="error-message">{serverError}</div>}
           <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            className={errors.email ? "input-error" : ""}
             placeholder="admin@example.com"
-            required
+            {...register("email")}
           />
+          {errors.email && (
+            <div className="field-error">{errors.email.message}</div>
+          )}
           <label htmlFor="password">Password</label>
           <input
             id="password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            className={errors.password ? "input-error" : ""}
             placeholder="Enter your password"
-            required
+            {...register("password")}
           />
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+          {errors.password && (
+            <div className="field-error">{errors.password.message}</div>
+          )}
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
       </div>

@@ -53,6 +53,15 @@
   transition: border-color 0.15s;
 }
 
+.login-card input.input-error {
+  border-color: #dc2626;
+}
+
+.login-card input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
 .login-card input:focus {
   outline: none;
   border-color: #2563eb;
@@ -97,6 +106,13 @@
 
 .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Field validation error */
+.field-error {
+  color: #dc2626;
+  font-size: 0.8125rem;
+  margin: -0.75rem 0 1rem;
 }
 
 /* Error message */
