@@ -53,11 +53,7 @@ The client proxies `/api/*` requests to the server via Vite config (target is co
 - **User roles**: `admin` and `agent` (defined as Prisma enum, default `agent`)
 - **Rate limiting**: Auth routes are rate-limited, but only enforced when `NODE_ENV=production`
 
-## E2E Testing
+## Testing
 
-- **Framework**: Playwright (config at root `playwright.config.ts`)
-- **Test database**: `helpdesk_test` (isolated from dev `helpdesk` DB), configured in `server/.env.test`
-- **Ports**: Test server on 3001, test client on 5174 (dev uses 3000/5173)
-- **Global setup** (`e2e/global-setup.ts`): Runs `prisma migrate reset --force` then seeds the test DB
-- **Tests directory**: `e2e/tests/`
-- **Run tests**: `bun run test:e2e` from root (also `test:e2e:ui`, `test:e2e:headed`)
+- Use the `e2e-test-writer` agent for writing Playwright E2E tests
+- Run tests with `bun run test:e2e` from root
