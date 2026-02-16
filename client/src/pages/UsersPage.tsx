@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,29 +21,15 @@ interface User {
 }
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { data: users, isLoading, error } = useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const { data } = await axios.get<{ users: User[] }>("/api/users");
+      return data.users;
+    },
+  });
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const res = await fetch("/api/users", { credentials: "include" });
-        if (!res.ok) {
-          throw new Error("Failed to fetch users");
-        }
-        const data = await res.json();
-        setUsers(data.users);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch users");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUsers();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         <Loader2 className="animate-spin mr-2 h-5 w-5" />
@@ -57,7 +44,7 @@ export default function UsersPage() {
         <h1 className="text-2xl font-bold mb-6">Users</h1>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>Failed to fetch users</AlertDescription>
         </Alert>
       </div>
     );
@@ -76,7 +63,7 @@ export default function UsersPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {users?.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>

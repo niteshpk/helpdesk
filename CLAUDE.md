@@ -40,6 +40,8 @@ The client proxies `/api/*` requests to the server via Vite config (target is co
 - Use shadcn/ui components for all UI (import from `@/components/ui/*`)
 - Use the `@/` path alias for imports (maps to `./src/`)
 - Use shadcn's semantic color tokens (e.g. `bg-background`, `text-muted-foreground`, `text-destructive`) instead of hardcoded Tailwind colors
+- Use Axios for HTTP requests (not `fetch`)
+- Use TanStack React Query (`useQuery`, `useMutation`) for server state management (not `useEffect` + `useState`)
 
 ## Authentication
 
