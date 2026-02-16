@@ -14,7 +14,7 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col">
       <nav className="flex items-center justify-between bg-background border-b px-6 h-14">
         <div className="flex items-center gap-6">
-          <span className="text-lg font-bold">Helpdesk</span>
+          <Link to="/" className="text-lg font-bold hover:text-foreground transition-colors">Helpdesk</Link>
           {session?.user?.role === "admin" && (
             <Link to="/users" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Users
