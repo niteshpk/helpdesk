@@ -1,10 +1,20 @@
-import { Router } from "express";
+import { Router, type Response } from "express";
+import type { ZodType } from "zod/v4";
 import { hashPassword } from "better-auth/crypto";
-import { createUserSchema } from "core/schemas/users.ts";
+import { createUserSchema, updateUserSchema } from "core/schemas/users.ts";
 import { Role } from "../generated/prisma/enums";
 import { requireAuth } from "../middleware/require-auth";
 import { requireAdmin } from "../middleware/require-admin";
 import prisma from "../db";
+
+function validate<T>(schema: ZodType<T>, body: unknown, res: Response): T | null {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    res.status(400).json({ error: result.error.issues[0]?.message ?? "Validation failed" });
+    return null;
+  }
+  return result.data;
+}
 
 const router = Router();
 
@@ -17,13 +27,10 @@ router.get("/", requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post("/", requireAuth, requireAdmin, async (req, res) => {
-  const result = createUserSchema.safeParse(req.body);
-  if (!result.success) {
-    res.status(400).json({ error: result.error.issues[0]?.message ?? "Validation failed" });
-    return;
-  }
+  const data = validate(createUserSchema, req.body, res);
+  if (!data) return;
 
-  const { name, email, password } = result.data;
+  const { name, email, password } = data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -66,6 +73,41 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
   });
 
   res.status(201).json({ user });
+});
+
+router.put("/:id", requireAuth, requireAdmin, async (req, res) => {
+  const id = req.params.id as string;
+
+  const data = validate(updateUserSchema, req.body, res);
+  if (!data) return;
+
+  const { name, email, password } = data;
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing && existing.id !== id) {
+    res.status(409).json({ error: "Email already exists" });
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: id },
+    data: { name, email, updatedAt: new Date() },
+  });
+
+  if (password) {
+    const hashedPassword = await hashPassword(password);
+    await prisma.account.updateMany({
+      where: { userId: id, providerId: "credential" },
+      data: { password: hashedPassword, updatedAt: new Date() },
+    });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: id },
+    select: { id: true, name: true, email: true, role: true, createdAt: true },
+  });
+
+  res.json({ user });
 });
 
 export default router;

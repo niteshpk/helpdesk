@@ -39,6 +39,7 @@ describe("UsersPage", () => {
     expect(screen.getByText("Email")).toBeInTheDocument();
     expect(screen.getByText("Role")).toBeInTheDocument();
     expect(screen.getByText("Created")).toBeInTheDocument();
+    expect(screen.getByText("Actions")).toBeInTheDocument();
     expect(document.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
   });
 
@@ -140,5 +141,48 @@ describe("UsersPage", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("should show edit buttons for each user row", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { users: mockUsers } });
+    renderWithQuery(<UsersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Alice Admin")).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("button", { name: "Edit Alice Admin" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit Bob Agent" })).toBeInTheDocument();
+  });
+
+  it("should open edit dialog with 'Edit User' title when clicking edit button", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { users: mockUsers } });
+    const user = userEvent.setup();
+    renderWithQuery(<UsersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Alice Admin")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Edit Alice Admin" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Edit User" })).toBeInTheDocument();
+  });
+
+  it("should pre-populate edit form with user data", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { users: mockUsers } });
+    const user = userEvent.setup();
+    renderWithQuery(<UsersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Alice Admin")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Edit Alice Admin" }));
+
+    expect(screen.getByLabelText("Name")).toHaveValue("Alice Admin");
+    expect(screen.getByLabelText("Email")).toHaveValue("alice@example.com");
+    expect(screen.getByLabelText("Password")).toHaveValue("");
   });
 });

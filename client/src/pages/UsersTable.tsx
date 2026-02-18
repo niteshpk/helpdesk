@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Pencil } from "lucide-react";
 
 interface User {
   id: string;
@@ -21,7 +22,11 @@ interface User {
   createdAt: string;
 }
 
-export default function UsersTable() {
+interface UsersTableProps {
+  onEdit: (user: User) => void;
+}
+
+export default function UsersTable({ onEdit }: UsersTableProps) {
   const {
     data: users,
     isLoading,
@@ -51,6 +56,7 @@ export default function UsersTable() {
           <TableHead>Email</TableHead>
           <TableHead>Role</TableHead>
           <TableHead>Created</TableHead>
+          <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -69,6 +75,9 @@ export default function UsersTable() {
                 <TableCell>
                   <Skeleton className="h-4 w-24" />
                 </TableCell>
+                <TableCell>
+                  <Skeleton className="h-8 w-8 rounded" />
+                </TableCell>
               </TableRow>
             ))
           : users?.map((user) => (
@@ -84,6 +93,16 @@ export default function UsersTable() {
                 </TableCell>
                 <TableCell>
                   {new Date(user.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(user)}
+                    aria-label={`Edit ${user.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

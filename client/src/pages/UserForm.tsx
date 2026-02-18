@@ -1,6 +1,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createUserSchema, type CreateUserInput } from "core/schemas/users";
+import {
+  createUserSchema,
+  updateUserSchema,
+  type CreateUserInput,
+  type UpdateUserInput,
+} from "core/schemas/users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -9,41 +14,57 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle } from "lucide-react";
 
-interface CreateUserFormProps {
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface UserFormProps {
+  user?: UserData;
   onSuccess: () => void;
 }
 
-export default function CreateUserForm({ onSuccess }: CreateUserFormProps) {
+export default function UserForm({ user, onSuccess }: UserFormProps) {
+  const isEdit = !!user;
   const queryClient = useQueryClient();
 
-  const form = useForm<CreateUserInput>({
-    resolver: zodResolver(createUserSchema),
-    defaultValues: { name: "", email: "", password: "" },
+  const form = useForm<CreateUserInput | UpdateUserInput>({
+    resolver: zodResolver(isEdit ? updateUserSchema : createUserSchema),
+    defaultValues: {
+      name: user?.name ?? "",
+      email: user?.email ?? "",
+      password: "",
+    },
   });
 
-  const createUser = useMutation({
-    mutationFn: async (payload: CreateUserInput) => {
+  const mutation = useMutation({
+    mutationFn: async (payload: CreateUserInput | UpdateUserInput) => {
+      if (isEdit) {
+        const { data } = await axios.put(`/api/users/${user.id}`, payload);
+        return data.user;
+      }
       const { data } = await axios.post("/api/users", payload);
       return data.user;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       form.reset();
-      createUser.reset();
+      mutation.reset();
       onSuccess();
     },
   });
 
   const serverError =
-    createUser.error && axios.isAxiosError(createUser.error)
-      ? createUser.error.response?.data?.error ?? "Failed to create user"
-      : createUser.error
-        ? "Failed to create user"
+    mutation.error && axios.isAxiosError(mutation.error)
+      ? mutation.error.response?.data?.error ?? `Failed to ${isEdit ? "update" : "create"} user`
+      : mutation.error
+        ? `Failed to ${isEdit ? "update" : "create"} user`
         : null;
 
   return (
     <form
-      onSubmit={form.handleSubmit((data) => createUser.mutate(data))}
+      onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
       className="space-y-4"
       autoComplete="off"
     >
@@ -82,7 +103,7 @@ export default function CreateUserForm({ onSuccess }: CreateUserFormProps) {
         <Input
           id="password"
           type="password"
-          placeholder="Minimum 8 characters"
+          placeholder={isEdit ? "Leave blank to keep current" : "Minimum 8 characters"}
           autoComplete="new-password"
           aria-invalid={!!form.formState.errors.password}
           {...form.register("password")}
@@ -100,8 +121,10 @@ export default function CreateUserForm({ onSuccess }: CreateUserFormProps) {
         </Alert>
       )}
       <div className="flex justify-end">
-        <Button type="submit" disabled={createUser.isPending}>
-          {createUser.isPending ? "Creating..." : "Create User"}
+        <Button type="submit" disabled={mutation.isPending}>
+          {isEdit
+            ? mutation.isPending ? "Saving..." : "Save Changes"
+            : mutation.isPending ? "Creating..." : "Create User"}
         </Button>
       </div>
     </form>

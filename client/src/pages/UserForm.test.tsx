@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
 import { renderWithQuery } from "@/test/render";
-import CreateUserForm from "./CreateUserForm";
+import UserForm from "./UserForm";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, { deep: true });
@@ -14,10 +14,10 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-function renderForm() {
-  const user = userEvent.setup();
-  renderWithQuery(<CreateUserForm onSuccess={onSuccess} />);
-  return { user };
+function renderForm(user?: { id: string; name: string; email: string }) {
+  const actor = userEvent.setup();
+  renderWithQuery(<UserForm user={user} onSuccess={onSuccess} />);
+  return { user: actor };
 }
 
 async function fillForm(
@@ -26,10 +26,12 @@ async function fillForm(
 ) {
   await user.type(screen.getByLabelText("Name"), name);
   await user.type(screen.getByLabelText("Email"), email);
-  await user.type(screen.getByLabelText("Password"), password);
+  if (password) {
+    await user.type(screen.getByLabelText("Password"), password);
+  }
 }
 
-describe("CreateUserForm", () => {
+describe("UserForm — create mode", () => {
   it("should render all form fields and submit button", () => {
     renderForm();
 
@@ -169,6 +171,117 @@ describe("CreateUserForm", () => {
     await waitFor(() => {
       const button = screen.getByRole("button", { name: "Creating..." });
       expect(button).toBeDisabled();
+    });
+  });
+});
+
+describe("UserForm — edit mode", () => {
+  const existingUser = { id: "u1", name: "Alice", email: "alice@example.com" };
+
+  it("should pre-populate name and email fields", () => {
+    renderForm(existingUser);
+
+    expect(screen.getByLabelText("Name")).toHaveValue("Alice");
+    expect(screen.getByLabelText("Email")).toHaveValue("alice@example.com");
+    expect(screen.getByLabelText("Password")).toHaveValue("");
+  });
+
+  it("should show 'Save Changes' button in edit mode", () => {
+    renderForm(existingUser);
+
+    expect(screen.getByRole("button", { name: "Save Changes" })).toBeInTheDocument();
+  });
+
+  it("should show password placeholder for edit mode", () => {
+    renderForm(existingUser);
+
+    expect(screen.getByLabelText("Password")).toHaveAttribute(
+      "placeholder",
+      "Leave blank to keep current"
+    );
+  });
+
+  it("should allow submitting with empty password in edit mode", async () => {
+    mockedAxios.put.mockResolvedValue({ data: { user: { id: "u1" } } });
+    const { user } = renderForm(existingUser);
+
+    await user.clear(screen.getByLabelText("Name"));
+    await user.type(screen.getByLabelText("Name"), "Alice Updated");
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(mockedAxios.put).toHaveBeenCalledWith("/api/users/u1", {
+        name: "Alice Updated",
+        email: "alice@example.com",
+        password: "",
+      });
+    });
+  });
+
+  it("should call PUT /api/users/:id with password when provided", async () => {
+    mockedAxios.put.mockResolvedValue({ data: { user: { id: "u1" } } });
+    const { user } = renderForm(existingUser);
+
+    await user.type(screen.getByLabelText("Password"), "newpassword123");
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(mockedAxios.put).toHaveBeenCalledWith("/api/users/u1", {
+        name: "Alice",
+        email: "alice@example.com",
+        password: "newpassword123",
+      });
+    });
+  });
+
+  it("should call onSuccess after successful update", async () => {
+    mockedAxios.put.mockResolvedValue({ data: { user: { id: "u1" } } });
+    const { user } = renderForm(existingUser);
+
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalled();
+    });
+  });
+
+  it("should show 'Saving...' and disable button while submitting", async () => {
+    mockedAxios.put.mockReturnValue(new Promise(() => {}));
+    const { user } = renderForm(existingUser);
+
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      const button = screen.getByRole("button", { name: "Saving..." });
+      expect(button).toBeDisabled();
+    });
+  });
+
+  it("should show validation error for short password in edit mode", async () => {
+    const { user } = renderForm(existingUser);
+
+    await user.type(screen.getByLabelText("Password"), "short");
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Password must be at least 8 characters")).toBeInTheDocument();
+    });
+    expect(mockedAxios.put).not.toHaveBeenCalled();
+  });
+
+  it("should display server error message on update failure", async () => {
+    const error = new Error("Conflict");
+    Object.assign(error, {
+      response: { status: 409, data: { error: "Email already exists" } },
+    });
+    mockedAxios.put.mockRejectedValue(error);
+    mockedAxios.isAxiosError.mockReturnValue(true);
+    const { user } = renderForm(existingUser);
+
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Email already exists")).toBeInTheDocument();
     });
   });
 });
