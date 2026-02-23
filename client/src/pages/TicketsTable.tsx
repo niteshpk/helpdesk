@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import {
+  type ColumnDef,
+  type SortingState,
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+} from "@tanstack/react-table";
 import { type TicketStatus } from "core/constants/ticket-status.ts";
 import { type TicketCategory } from "core/constants/ticket-category.ts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 interface Ticket {
   id: number;
@@ -25,23 +34,89 @@ interface Ticket {
   createdAt: string;
 }
 
-const statusVariant: Record<TicketStatus, "default" | "secondary" | "outline"> = {
-  open: "default",
-  resolved: "secondary",
-  closed: "outline",
-};
+const statusVariant: Record<TicketStatus, "default" | "secondary" | "outline"> =
+  {
+    open: "default",
+    resolved: "secondary",
+    closed: "outline",
+  };
+
+const columns: ColumnDef<Ticket>[] = [
+  {
+    accessorKey: "subject",
+    header: "Subject",
+  },
+  {
+    accessorKey: "senderName",
+    header: "Sender",
+    cell: ({ row }) => (
+      <div>
+        <div>{row.original.senderName}</div>
+        <div className="text-sm text-muted-foreground">
+          {row.original.senderEmail}
+        </div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <Badge variant={statusVariant[row.original.status]}>
+        {row.original.status}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "category",
+    header: "Category",
+    cell: ({ row }) =>
+      row.original.category ? (
+        <Badge variant="secondary">
+          {row.original.category.replace(/_/g, " ")}
+        </Badge>
+      ) : (
+        "—"
+      ),
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Created",
+    cell: ({ row }) =>
+      new Date(row.original.createdAt).toLocaleDateString(),
+  },
+];
 
 export default function TicketsTable() {
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "createdAt", desc: true },
+  ]);
+
+  const sortBy = sorting[0]?.id ?? "createdAt";
+  const sortOrder = sorting[0]?.desc ?? true ? "desc" : "asc";
+
   const {
     data: tickets,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["tickets"],
+    queryKey: ["tickets", sortBy, sortOrder],
     queryFn: async () => {
-      const { data } = await axios.get<{ tickets: Ticket[] }>("/api/tickets");
+      const { data } = await axios.get<{ tickets: Ticket[] }>("/api/tickets", {
+        params: { sortBy, sortOrder },
+      });
       return data.tickets;
     },
+  });
+
+  const table = useReactTable({
+    data: tickets ?? [],
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    manualSorting: true,
+    enableMultiSort: false,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   if (error) {
@@ -56,13 +131,32 @@ export default function TicketsTable() {
   return (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead>Subject</TableHead>
-          <TableHead>Sender</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Created</TableHead>
-        </TableRow>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <TableHead key={header.id}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="-ml-3"
+                  onClick={header.column.getToggleSortingHandler()}
+                >
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                  {header.column.getIsSorted() === "asc" ? (
+                    <ArrowUp className="ml-2 h-4 w-4" />
+                  ) : header.column.getIsSorted() === "desc" ? (
+                    <ArrowDown className="ml-2 h-4 w-4" />
+                  ) : (
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  )}
+                </Button>
+              </TableHead>
+            ))}
+          </TableRow>
+        ))}
       </TableHeader>
       <TableBody>
         {isLoading
@@ -85,32 +179,13 @@ export default function TicketsTable() {
                 </TableCell>
               </TableRow>
             ))
-          : tickets?.map((ticket) => (
-              <TableRow key={ticket.id}>
-                <TableCell>{ticket.subject}</TableCell>
-                <TableCell>
-                  <div>{ticket.senderName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {ticket.senderEmail}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant[ticket.status]}>
-                    {ticket.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {ticket.category ? (
-                    <Badge variant="secondary">
-                      {ticket.category.replace(/_/g, " ")}
-                    </Badge>
-                  ) : (
-                    "—"
-                  )}
-                </TableCell>
-                <TableCell>
-                  {new Date(ticket.createdAt).toLocaleDateString()}
-                </TableCell>
+          : table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
               </TableRow>
             ))}
       </TableBody>

@@ -1,4 +1,5 @@
 import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
 import { renderWithQuery } from "@/test/render";
@@ -47,11 +48,13 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     expect(screen.getByText("Tickets")).toBeInTheDocument();
-    expect(screen.getByText("Subject")).toBeInTheDocument();
-    expect(screen.getByText("Sender")).toBeInTheDocument();
-    expect(screen.getByText("Status")).toBeInTheDocument();
-    expect(screen.getByText("Category")).toBeInTheDocument();
-    expect(screen.getByText("Created")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Subject/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Sender/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Status/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Category/ })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Created/ })).toBeInTheDocument();
     expect(document.querySelector("[data-slot='skeleton']")).toBeInTheDocument();
   });
 
@@ -60,12 +63,18 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Cannot login to my account")).toBeInTheDocument();
+      expect(
+        screen.getByText("Cannot login to my account")
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByText("Refund for order #123")).toBeInTheDocument();
-    expect(screen.getByText("How do I reset my password?")).toBeInTheDocument();
-    expect(document.querySelector("[data-slot='skeleton']")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("How do I reset my password?")
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector("[data-slot='skeleton']")
+    ).not.toBeInTheDocument();
   });
 
   it("should display sender name and email", async () => {
@@ -109,7 +118,9 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("How do I reset my password?")).toBeInTheDocument();
+      expect(
+        screen.getByText("How do I reset my password?")
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByText("—")).toBeInTheDocument();
@@ -119,7 +130,9 @@ describe("TicketsPage", () => {
     mockedAxios.get.mockResolvedValue({ data: { tickets: [mockTickets[0]] } });
     renderWithQuery(<TicketsPage />);
 
-    const expectedDate = new Date("2025-03-01T10:00:00.000Z").toLocaleDateString();
+    const expectedDate = new Date(
+      "2025-03-01T10:00:00.000Z"
+    ).toLocaleDateString();
     await waitFor(() => {
       expect(screen.getByText(expectedDate)).toBeInTheDocument();
     });
@@ -130,7 +143,9 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Failed to fetch tickets")).toBeInTheDocument();
+      expect(
+        screen.getByText("Failed to fetch tickets")
+      ).toBeInTheDocument();
     });
   });
 
@@ -139,7 +154,9 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Failed to fetch tickets")).toBeInTheDocument();
+      expect(
+        screen.getByText("Failed to fetch tickets")
+      ).toBeInTheDocument();
     });
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -150,19 +167,82 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(document.querySelector("[data-slot='skeleton']")).not.toBeInTheDocument();
+      expect(
+        document.querySelector("[data-slot='skeleton']")
+      ).not.toBeInTheDocument();
     });
 
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getAllByRole("row")).toHaveLength(1); // header row only
   });
 
-  it("should call axios.get with /api/tickets", async () => {
+  it("should call axios.get with /api/tickets and default sort params", async () => {
     mockedAxios.get.mockResolvedValue({ data: { tickets: [] } });
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets");
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: { sortBy: "createdAt", sortOrder: "desc" },
+      });
+    });
+  });
+
+  it("should sort by column when clicking a column header", async () => {
+    const user = userEvent.setup();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: mockTickets } });
+    renderWithQuery(<TicketsPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Cannot login to my account")
+      ).toBeInTheDocument();
+    });
+
+    mockedAxios.get.mockClear();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: mockTickets } });
+
+    await user.click(screen.getByRole("button", { name: /Subject/ }));
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: { sortBy: "subject", sortOrder: "asc" },
+      });
+    });
+  });
+
+  it("should toggle sort order when clicking the same column header twice", async () => {
+    const user = userEvent.setup();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: mockTickets } });
+    renderWithQuery(<TicketsPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Cannot login to my account")
+      ).toBeInTheDocument();
+    });
+
+    mockedAxios.get.mockClear();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: mockTickets } });
+
+    // First click: sort by Subject ascending
+    await user.click(screen.getByRole("button", { name: /Subject/ }));
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: { sortBy: "subject", sortOrder: "asc" },
+      });
+    });
+
+    mockedAxios.get.mockClear();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: mockTickets } });
+
+    // Second click: sort by Subject descending
+    await user.click(screen.getByRole("button", { name: /Subject/ }));
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: { sortBy: "subject", sortOrder: "desc" },
+      });
     });
   });
 });
