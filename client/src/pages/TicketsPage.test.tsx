@@ -1,9 +1,10 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
 import { renderWithQuery } from "@/test/render";
 import TicketsPage from "./TicketsPage";
+import TicketsTable from "./TicketsTable";
 
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, { deep: true });
@@ -37,6 +38,10 @@ const mockTickets = [
     createdAt: "2025-02-27T14:00:00.000Z",
   },
 ];
+
+const defaultParams = {
+  params: { sortBy: "createdAt", sortOrder: "desc" },
+};
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -181,9 +186,10 @@ describe("TicketsPage", () => {
     renderWithQuery(<TicketsPage />);
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
-        params: { sortBy: "createdAt", sortOrder: "desc" },
-      });
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        "/api/tickets",
+        defaultParams
+      );
     });
   });
 
@@ -242,6 +248,82 @@ describe("TicketsPage", () => {
     await waitFor(() => {
       expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
         params: { sortBy: "subject", sortOrder: "desc" },
+      });
+    });
+  });
+
+  it("should render the search input and filter dropdowns", () => {
+    mockedAxios.get.mockReturnValue(new Promise(() => {}));
+    renderWithQuery(<TicketsPage />);
+
+    expect(
+      screen.getByPlaceholderText("Search tickets...")
+    ).toBeInTheDocument();
+    expect(screen.getByText("All statuses")).toBeInTheDocument();
+    expect(screen.getByText("All categories")).toBeInTheDocument();
+  });
+
+  it("should send search param when typing in the search input", async () => {
+    const user = userEvent.setup();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: mockTickets } });
+    renderWithQuery(<TicketsPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Cannot login to my account")
+      ).toBeInTheDocument();
+    });
+
+    mockedAxios.get.mockClear();
+    mockedAxios.get.mockResolvedValue({ data: { tickets: [mockTickets[0]] } });
+
+    await user.type(
+      screen.getByPlaceholderText("Search tickets..."),
+      "login"
+    );
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: expect.objectContaining({ search: "login" }),
+      });
+    });
+  });
+
+  it("should include status filter in API request", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { tickets: [mockTickets[0]] } });
+    renderWithQuery(
+      <TicketsTable filters={{ status: "open" }} />
+    );
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: expect.objectContaining({ status: "open" }),
+      });
+    });
+  });
+
+  it("should include category filter in API request", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { tickets: [mockTickets[1]] } });
+    renderWithQuery(
+      <TicketsTable filters={{ category: "refund_request" }} />
+    );
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: expect.objectContaining({ category: "refund_request" }),
+      });
+    });
+  });
+
+  it("should include search filter in API request", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { tickets: [mockTickets[0]] } });
+    renderWithQuery(
+      <TicketsTable filters={{ search: "login" }} />
+    );
+
+    await waitFor(() => {
+      expect(mockedAxios.get).toHaveBeenCalledWith("/api/tickets", {
+        params: expect.objectContaining({ search: "login" }),
       });
     });
   });

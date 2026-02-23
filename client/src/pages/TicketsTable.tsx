@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import type { TicketFilters } from "./TicketsPage";
 
 interface Ticket {
   id: number;
@@ -87,7 +88,7 @@ const columns: ColumnDef<Ticket>[] = [
   },
 ];
 
-export default function TicketsTable() {
+export default function TicketsTable({ filters }: { filters: TicketFilters }) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
@@ -100,10 +101,10 @@ export default function TicketsTable() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["tickets", sortBy, sortOrder],
+    queryKey: ["tickets", sortBy, sortOrder, filters],
     queryFn: async () => {
       const { data } = await axios.get<{ tickets: Ticket[] }>("/api/tickets", {
-        params: { sortBy, sortOrder },
+        params: { sortBy, sortOrder, ...filters },
       });
       return data.tickets;
     },
