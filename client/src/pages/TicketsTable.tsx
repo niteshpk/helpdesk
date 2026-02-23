@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -9,7 +10,7 @@ import {
   getCoreRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { type TicketStatus } from "core/constants/ticket-status.ts";
+import { type TicketStatus, statusVariant } from "core/constants/ticket-status.ts";
 import { type TicketCategory } from "core/constants/ticket-category.ts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -52,17 +53,18 @@ interface TicketsResponse {
   pageSize: number;
 }
 
-const statusVariant: Record<TicketStatus, "default" | "secondary" | "outline"> =
-  {
-    open: "default",
-    resolved: "secondary",
-    closed: "outline",
-  };
-
 const columns: ColumnDef<Ticket>[] = [
   {
     accessorKey: "subject",
     header: "Subject",
+    cell: ({ row }) => (
+      <Link
+        to={`/tickets/${row.original.id}`}
+        className="link font-medium"
+      >
+        {row.original.subject}
+      </Link>
+    ),
   },
   {
     accessorKey: "senderName",
