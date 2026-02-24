@@ -14,8 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2 } from "lucide-react";
+import ErrorAlert from "@/components/ErrorAlert";
+import ErrorMessage from "@/components/ErrorMessage";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.email("Please enter a valid email"),
@@ -73,10 +74,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             {serverError && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{serverError}</AlertDescription>
-              </Alert>
+              <ErrorAlert message={serverError} className="mb-4" />
             )}
             <div className="grid gap-4">
               <div className="grid gap-2">
@@ -88,9 +86,7 @@ export default function LoginPage() {
                   {...register("email")}
                 />
                 {errors.email && (
-                  <p className="text-destructive text-sm">
-                    {errors.email.message}
-                  </p>
+                  <ErrorMessage message={errors.email.message} />
                 )}
               </div>
               <div className="grid gap-2">
@@ -102,9 +98,7 @@ export default function LoginPage() {
                   {...register("password")}
                 />
                 {errors.password && (
-                  <p className="text-destructive text-sm">
-                    {errors.password.message}
-                  </p>
+                  <ErrorMessage message={errors.password.message} />
                 )}
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>

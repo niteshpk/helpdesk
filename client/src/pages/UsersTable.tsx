@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Role } from "core/constants/role.ts";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import ErrorAlert from "@/components/ErrorAlert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -42,12 +42,7 @@ export default function UsersTable({ onEdit, onDelete }: UsersTableProps) {
   });
 
   if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>Failed to fetch users</AlertDescription>
-      </Alert>
-    );
+    return <ErrorAlert message="Failed to fetch users" />;
   }
 
   return (

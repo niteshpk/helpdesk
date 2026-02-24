@@ -10,9 +10,9 @@ import {
   getCoreRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { type TicketStatus, statusVariant } from "core/constants/ticket-status.ts";
-import { type TicketCategory } from "core/constants/ticket-category.ts";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { type Ticket } from "core/constants/ticket.ts";
+import { statusVariant } from "core/constants/ticket-status.ts";
+import ErrorAlert from "@/components/ErrorAlert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertCircle,
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
@@ -35,16 +34,6 @@ import {
   ChevronsRight,
 } from "lucide-react";
 import type { TicketFilters } from "./TicketsPage";
-
-interface Ticket {
-  id: number;
-  subject: string;
-  status: TicketStatus;
-  category: TicketCategory | null;
-  senderName: string;
-  senderEmail: string;
-  createdAt: string;
-}
 
 interface TicketsResponse {
   tickets: Ticket[];
@@ -165,12 +154,7 @@ export default function TicketsTable({ filters }: { filters: TicketFilters }) {
   });
 
   if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>Failed to fetch tickets</AlertDescription>
-      </Alert>
-    );
+    return <ErrorAlert message="Failed to fetch tickets" />;
   }
 
   return (

@@ -78,6 +78,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -90,7 +92,7 @@ describe("TicketDetailPage", () => {
 
     const comboboxes = screen.getAllByRole("combobox");
     expect(comboboxes[0]).toHaveTextContent("Open");
-    expect(comboboxes[1]).toHaveTextContent("Technical Question");
+    expect(comboboxes[1]).toHaveTextContent("Technical");
     expect(
       screen.getByText(/Alice Smith \(alice@example\.com\)/)
     ).toBeInTheDocument();
@@ -124,6 +126,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -139,6 +143,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -163,6 +169,8 @@ describe("TicketDetailPage", () => {
         return Promise.resolve({ data: assignedTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -173,8 +181,10 @@ describe("TicketDetailPage", () => {
       ).toBeInTheDocument();
     });
 
-    const comboboxes = screen.getAllByRole("combobox");
-    expect(comboboxes[2]).toHaveTextContent("Jane Doe");
+    await waitFor(() => {
+      const comboboxes = screen.getAllByRole("combobox");
+      expect(comboboxes[2]).toHaveTextContent("Jane Doe");
+    });
   });
 
   it("should call PATCH with assignedToId when selecting an agent", async () => {
@@ -183,6 +193,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     mockedAxios.patch.mockResolvedValue({
@@ -223,6 +235,8 @@ describe("TicketDetailPage", () => {
         return Promise.resolve({ data: assignedTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     mockedAxios.patch.mockResolvedValue({
@@ -260,6 +274,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -288,6 +304,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     mockedAxios.patch.mockResolvedValue({
@@ -323,6 +341,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -334,15 +354,15 @@ describe("TicketDetailPage", () => {
     });
 
     const comboboxes = screen.getAllByRole("combobox");
-    expect(comboboxes[1]).toHaveTextContent("Technical Question");
+    expect(comboboxes[1]).toHaveTextContent("Technical");
 
     await user.click(comboboxes[1]);
 
     await waitFor(() => {
       expect(screen.getByRole("option", { name: "None" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "General Question" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "Technical Question" })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: "Refund Request" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "General" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Technical" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Refund" })).toBeInTheDocument();
     });
   });
 
@@ -352,6 +372,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     mockedAxios.patch.mockResolvedValue({
@@ -369,10 +391,10 @@ describe("TicketDetailPage", () => {
     await user.click(comboboxes[1]);
 
     await waitFor(() => {
-      expect(screen.getByRole("option", { name: "Refund Request" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Refund" })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("option", { name: "Refund Request" }));
+    await user.click(screen.getByRole("option", { name: "Refund" }));
 
     await waitFor(() => {
       expect(mockedAxios.patch).toHaveBeenCalledWith("/api/tickets/1", {
@@ -387,6 +409,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     mockedAxios.patch.mockResolvedValue({
@@ -426,6 +450,8 @@ describe("TicketDetailPage", () => {
         return Promise.resolve({ data: htmlTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();
@@ -440,6 +466,8 @@ describe("TicketDetailPage", () => {
       if (url === "/api/tickets/1") return Promise.resolve({ data: mockTicket });
       if (url === "/api/agents")
         return Promise.resolve({ data: { agents: mockAgents } });
+      if (url.includes("/replies"))
+        return Promise.resolve({ data: { replies: [] } });
       return Promise.reject(new Error("unexpected url"));
     });
     renderPage();

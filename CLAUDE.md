@@ -45,12 +45,15 @@ The client proxies `/api/*` requests to the server via Vite config (target is co
 - Define shared Zod schemas in the `core` package under `core/schemas/` (e.g. `core/schemas/users.ts`) and import them in both client and server (e.g. `import { createUserSchema } from "core/schemas/users"`)
 - Use Zod for validation (import from `zod/v4`)
 - Validate request bodies in route handlers using the shared `validate` helper (`import { validate } from "../lib/validate"`). It takes a Zod schema, the request body, and the `res` object — returns parsed data or `null` (after sending a 400 response).
+- Parse and validate numeric ID route params with the shared `parseId` helper (`import { parseId } from "../lib/parse-id"`). Returns a positive integer or `null` for invalid values.
 - Do not wrap async route handlers in try/catch — Express 5 automatically catches rejected promises
 - Use the shared `Role` constant instead of hardcoded `"admin"` / `"agent"` strings (import from `core/constants/role.ts`, e.g. `import { Role } from "core/constants/role.ts"`)
 - Define shared constants and domain types in `core/constants/` as union types (not `enum` — the client has `erasableSyntaxOnly` enabled). Use `as const` objects when runtime access is needed (e.g. `Role`), and plain union types when only type checking is needed (e.g. `type TicketStatus = "open" | "resolved" | "closed"`).
 - Use React Hook Form with Zod resolver for client-side form validation (`useForm` + `zodResolver` from `@hookform/resolvers/zod`)
 - Use Axios for HTTP requests (not `fetch`)
 - Use TanStack React Query (`useQuery`, `useMutation`) for server state management (not `useEffect` + `useState`)
+- Use the `ErrorAlert` component for error messages (`import ErrorAlert from "@/components/ErrorAlert"`). For static messages: `<ErrorAlert message="Failed to load data" />`. For mutation/query errors with automatic Axios message extraction: `<ErrorAlert error={mutation.error} fallback="Failed to save" />`.
+- Use the `ErrorMessage` component for field validation errors (`import ErrorMessage from "@/components/ErrorMessage"`): `{errors.name && <ErrorMessage message={errors.name.message} />}`
 
 ## Authentication
 
@@ -79,4 +82,6 @@ The client proxies `/api/*` requests to the server via Vite config (target is co
 - **Framework**: Playwright
 - Use the `e2e-test-writer` agent for writing Playwright E2E tests
 - Run with `bun run test:e2e` from root
-- Only use for navigation, auth redirects, and full-stack integration flows
+- **Only use for things that truly require a real browser + server** — never duplicate what unit tests already cover
+- Valid E2E scenarios: auth redirects, cross-page navigation, data persistence after reload, full-stack integration flows (e.g. webhook creates data → UI displays it)
+- Invalid E2E scenarios: rendering, display logic, component states, API call verification, form validation, error messages — use component tests for these

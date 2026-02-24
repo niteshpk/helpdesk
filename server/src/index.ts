@@ -9,6 +9,7 @@ import usersRouter from "./routes/users";
 import ticketsRouter from "./routes/tickets";
 import agentsRouter from "./routes/agents";
 import webhooksRouter from "./routes/webhooks";
+import repliesRouter from "./routes/replies";
 
 if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET environment variable is required");
@@ -57,6 +58,7 @@ app.get("/api/me", requireAuth, (req, res) => {
 app.use("/api/users", usersRouter);
 app.use("/api/tickets", ticketsRouter);
 app.use("/api/agents", agentsRouter);
+app.use("/api/tickets/:ticketId/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
 if (!process.env.WEBHOOK_SECRET) {

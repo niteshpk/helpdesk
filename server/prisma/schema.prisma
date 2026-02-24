@@ -24,6 +24,11 @@ enum TicketStatus {
   closed
 }
 
+enum SenderType {
+  agent
+  customer
+}
+
 enum TicketCategory {
   general_question
   technical_question
@@ -43,6 +48,7 @@ model User {
   sessions        Session[]
   accounts        Account[]
   assignedTickets Ticket[]
+  replies         Reply[]
 
   @@map("user")
 }
@@ -93,8 +99,22 @@ model Ticket {
   assignedTo   User?           @relation(fields: [assignedToId], references: [id])
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  replies      Reply[]
 
   @@map("ticket")
+}
+
+model Reply {
+  id         Int        @id @default(autoincrement())
+  body       String
+  senderType SenderType
+  ticketId   Int
+  ticket     Ticket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?      @relation(fields: [userId], references: [id])
+  createdAt  DateTime   @default(now())
+
+  @@map("reply")
 }
 
 model Verification {

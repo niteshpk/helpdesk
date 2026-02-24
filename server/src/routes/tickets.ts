@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/require-auth";
 import { validate } from "../lib/validate";
+import { parseId } from "../lib/parse-id";
 import { ticketListQuerySchema, updateTicketSchema } from "core/schemas/tickets.ts";
 import prisma from "../db";
 import type { Prisma } from "../generated/prisma/client";
@@ -52,8 +53,8 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 router.get("/:id", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = parseId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Invalid ticket ID" });
     return;
   }
@@ -74,8 +75,8 @@ router.get("/:id", requireAuth, async (req, res) => {
 });
 
 router.patch("/:id", requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) {
+  const id = parseId(req.params.id);
+  if (!id) {
     res.status(400).json({ error: "Invalid ticket ID" });
     return;
   }

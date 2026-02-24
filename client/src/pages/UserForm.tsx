@@ -8,11 +8,11 @@ import {
 } from "core/schemas/users";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import ErrorAlert from "@/components/ErrorAlert";
+import ErrorMessage from "@/components/ErrorMessage";
 
 interface UserData {
   id: string;
@@ -55,13 +55,6 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
     },
   });
 
-  const serverError =
-    mutation.error && axios.isAxiosError(mutation.error)
-      ? mutation.error.response?.data?.error ?? `Failed to ${isEdit ? "update" : "create"} user`
-      : mutation.error
-        ? `Failed to ${isEdit ? "update" : "create"} user`
-        : null;
-
   return (
     <form
       onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
@@ -77,9 +70,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
           {...form.register("name")}
         />
         {form.formState.errors.name && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.name.message}
-          </p>
+          <ErrorMessage message={form.formState.errors.name.message} />
         )}
       </div>
       <div className="space-y-2">
@@ -93,9 +84,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
           {...form.register("email")}
         />
         {form.formState.errors.email && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.email.message}
-          </p>
+          <ErrorMessage message={form.formState.errors.email.message} />
         )}
       </div>
       <div className="space-y-2">
@@ -109,16 +98,14 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
           {...form.register("password")}
         />
         {form.formState.errors.password && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.password.message}
-          </p>
+          <ErrorMessage message={form.formState.errors.password.message} />
         )}
       </div>
-      {serverError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{serverError}</AlertDescription>
-        </Alert>
+      {mutation.error && (
+        <ErrorAlert
+          error={mutation.error}
+          fallback={`Failed to ${isEdit ? "update" : "create"} user`}
+        />
       )}
       <div className="flex justify-end">
         <Button type="submit" disabled={mutation.isPending}>

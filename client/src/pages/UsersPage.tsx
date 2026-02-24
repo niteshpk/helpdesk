@@ -18,8 +18,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Plus } from "lucide-react";
+import ErrorAlert from "@/components/ErrorAlert";
+import { Plus } from "lucide-react";
 import UserForm from "./UserForm";
 import UsersTable from "./UsersTable";
 
@@ -87,10 +87,7 @@ export default function UsersPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           {deleteMutation.isError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Failed to delete user</AlertDescription>
-            </Alert>
+            <ErrorAlert message="Failed to delete user" />
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
