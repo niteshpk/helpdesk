@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { type Ticket } from "core/constants/ticket.ts";
 import {
   Card,
@@ -39,7 +40,11 @@ export default function TicketDetail({ ticket }: TicketDetailProps) {
         </CardHeader>
         <CardContent>
           {ticket.bodyHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: ticket.bodyHtml }} />
+            <div
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(ticket.bodyHtml),
+              }}
+            />
           ) : (
             <p className="whitespace-pre-wrap">{ticket.body}</p>
           )}

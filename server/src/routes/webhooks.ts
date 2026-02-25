@@ -29,6 +29,7 @@ router.post("/inbound-email", requireWebhookSecret, async (req, res) => {
     await prisma.reply.create({
       data: {
         body: data.body,
+        bodyHtml: data.bodyHtml ?? null,
         senderType: "customer",
         ticketId: existingTicket.id,
         userId: null,

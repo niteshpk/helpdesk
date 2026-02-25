@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { type Ticket } from "core/constants/ticket.ts";
@@ -9,6 +10,7 @@ import ErrorAlert from "@/components/ErrorAlert";
 interface Reply {
   id: number;
   body: string;
+  bodyHtml: string | null;
   senderType: SenderType;
   user: { id: string; name: string } | null;
   createdAt: string;
@@ -67,7 +69,16 @@ export default function ReplyThread({ ticket }: ReplyThreadProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-sm">{reply.body}</p>
+              {reply.bodyHtml ? (
+                <div
+                  className="text-sm"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(reply.bodyHtml),
+                  }}
+                />
+              ) : (
+                <p className="whitespace-pre-wrap text-sm">{reply.body}</p>
+              )}
             </CardContent>
           </Card>
         );
