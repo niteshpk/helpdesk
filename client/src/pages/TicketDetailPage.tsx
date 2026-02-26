@@ -9,6 +9,7 @@ import TicketDetail from "@/components/TicketDetail";
 import UpdateTicket from "@/components/UpdateTicket";
 import ReplyThread from "@/components/ReplyThread";
 import ReplyForm from "@/components/ReplyForm";
+import TicketSummary from "@/components/TicketSummary";
 
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +42,8 @@ export default function TicketDetailPage() {
         <div className="grid grid-cols-[1fr_auto] gap-6">
           <div className="space-y-6">
             <TicketDetail ticket={ticket} />
+
+            <TicketSummary ticket={ticket} />
 
             <div className="space-y-3">
               <h2>Replies</h2>

@@ -71,13 +71,12 @@ export default function ReplyThread({ ticket }: ReplyThreadProps) {
             <CardContent>
               {reply.bodyHtml ? (
                 <div
-                  className="text-sm"
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(reply.bodyHtml),
                   }}
                 />
               ) : (
-                <p className="whitespace-pre-wrap text-sm">{reply.body}</p>
+                <p>{reply.body}</p>
               )}
             </CardContent>
           </Card>

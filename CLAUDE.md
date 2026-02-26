@@ -9,7 +9,7 @@ A ticket management system that uses AI to classify, respond to, and route suppo
 - **Frontend**: React + TypeScript + Vite (port 5173) + shadcn/ui
 - **Backend**: Express + TypeScript + Bun (port 3000)
 - **Database**: PostgreSQL with Prisma ORM
-- **AI**: Claude API (Anthropic)
+- **AI**: OpenAI GPT-5 Nano via Vercel AI SDK (`@ai-sdk/openai`)
 - **Auth**: Better Auth (email/password, database sessions)
 
 ## Project Structure

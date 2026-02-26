@@ -60,6 +60,48 @@ router.post("/", requireAuth, async (req, res) => {
   res.status(201).json(reply);
 });
 
+router.post("/summarize", requireAuth, async (req, res) => {
+  const ticketId = parseId(req.params.ticketId);
+  if (!ticketId) {
+    res.status(400).json({ error: "Invalid ticket ID" });
+    return;
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+  if (!ticket) {
+    res.status(404).json({ error: "Ticket not found" });
+    return;
+  }
+
+  const replies = await prisma.reply.findMany({
+    where: { ticketId },
+    orderBy: { createdAt: "asc" },
+    include: { user: { select: { name: true } } },
+  });
+
+  const conversation = replies
+    .map((r) => {
+      const sender =
+        r.senderType === "agent" ? (r.user?.name ?? "Agent") : ticket.senderName;
+      return `${sender}: ${r.body}`;
+    })
+    .join("\n\n");
+
+  const { text } = await generateText({
+    model: openai("gpt-5-nano"),
+    system:
+      "You are a helpful assistant that summarizes support ticket conversations. " +
+      "Provide a clear, concise summary that captures the customer's issue, any actions taken, and the current status. " +
+      "Keep the summary to 2-4 sentences. Return only the summary with no preamble.",
+    prompt:
+      `Subject: ${ticket.subject}\n\n` +
+      `Customer message:\n${ticket.body}\n\n` +
+      (conversation ? `Conversation:\n${conversation}` : "No replies yet."),
+  });
+
+  res.json({ summary: text });
+});
+
 router.post("/polish", requireAuth, async (req, res) => {
   const ticketId = parseId(req.params.ticketId);
   if (!ticketId) {
@@ -80,7 +122,7 @@ router.post("/polish", requireAuth, async (req, res) => {
   const customerName = ticket.senderName.split(" ")[0];
 
   const { text } = await generateText({
-    model: openai("gpt-4o-mini"),
+    model: openai("gpt-5-nano"),
     system:
       "You are a helpful writing assistant for a customer support team. " +
       "Improve the given reply for clarity, professional tone, and grammar. " +
