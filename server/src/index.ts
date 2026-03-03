@@ -1,3 +1,4 @@
+import Sentry from "./lib/sentry";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -63,6 +64,7 @@ app.use("/api/agents", agentsRouter);
 app.use("/api/tickets/:ticketId/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
+Sentry.setupExpressErrorHandler(app);
 
 if (!process.env.WEBHOOK_SECRET) {
   console.warn("Warning: WEBHOOK_SECRET is not set. Webhook endpoints will return 500.");
@@ -87,6 +89,7 @@ async function boot() {
 }
 
 boot().catch((error) => {
+  Sentry.captureException(error);
   console.error("Failed to start server:", error);
   process.exit(1);
 });
