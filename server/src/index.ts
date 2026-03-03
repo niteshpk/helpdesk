@@ -1,3 +1,4 @@
+import path from "path";
 import Sentry from "./lib/sentry";
 import express from "express";
 import cors from "cors";
@@ -65,6 +66,17 @@ app.use("/api/tickets/:ticketId/replies", repliesRouter);
 app.use("/api/webhooks", webhooksRouter);
 
 Sentry.setupExpressErrorHandler(app);
+
+// In production, serve the built React client as static files
+if (isProduction) {
+  const clientDist = path.resolve(import.meta.dirname, "../../client/dist");
+  app.use(express.static(clientDist));
+
+  // SPA fallback: serve index.html for any non-API route
+  app.get("/{*path}", (_req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 if (!process.env.WEBHOOK_SECRET) {
   console.warn("Warning: WEBHOOK_SECRET is not set. Webhook endpoints will return 500.");
