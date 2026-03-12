@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Helpdesk - AI-Powered Ticket Management System
 
 ## Project Overview
@@ -34,6 +38,20 @@ cd client && bun run dev
 
 The client proxies `/api/*` requests to the server via Vite config (target is configurable via `VITE_API_URL` env var, defaults to `http://localhost:3000`).
 
+```bash
+# Database
+cd server && bunx prisma migrate dev   # Run migrations
+cd server && bunx prisma db seed       # Seed admin user
+
+# Lint
+cd client && bun run lint
+
+# Build
+cd client && bun run build
+```
+
+Environment variables are documented in `server/.env.example` and `client/.env.example`.
+
 ## Key Conventions
 
 - Use Bun as the runtime and package manager (not npm/yarn)
@@ -66,6 +84,7 @@ The client proxies `/api/*` requests to the server via Vite config (target is co
 - **Existing queues**:
   - `classify-ticket` — classifies inbound tickets via GPT (retryLimit: 3, retryDelay: 30s, exponential backoff)
   - `auto-resolve-ticket` — attempts to auto-resolve tickets via GPT; if unsuccessful, transitions status to `open`
+  - `send-email` — sends outbound emails via SendGrid
 
 ## Ticket Lifecycle
 
